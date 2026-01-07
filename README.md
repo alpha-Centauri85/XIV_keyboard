@@ -1,3 +1,8 @@
+![αCentauri banner](assets/banner.png)
+
+# αCentauri
+
+
 # XIV_keyboard
 
 A Dalamud plugin that provides an on-screen keyboard designed for controller first input in Final Fantasy XIV.
