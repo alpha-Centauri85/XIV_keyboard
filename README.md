@@ -28,7 +28,11 @@ The goal is to make text input and key selection practical and comfortable witho
 - Confirm to send input to the game
 
 ## Screenshots
-*(Coming soon)*
+
+![Keyboard main layout](assets/screenshot1.png)
+![Typing in keyboard](assets/screenshot2.png)
+![Entered test loaded onto clipboard](assets/screenshot3.png)
+
 
 ## Roadmap
 - Improved navigation logic
