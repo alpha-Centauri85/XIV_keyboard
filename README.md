@@ -30,12 +30,15 @@ The goal is to make text input and key selection practical and comfortable witho
 ## Screenshots
 
 Main Keyboard layout
+
 ![Keyboard main layout](assets/screenshot1.png)
 
 Typing in keyboard
+
 ![Typing in keyboard](assets/screenshot2.png)
 
 Entered text pasted from Clipboard
+
 ![Entered test loaded onto clipboard](assets/screenshot3.png)
 
 
