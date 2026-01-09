@@ -47,5 +47,9 @@ Entered text pasted from Clipboard
 - Custom layouts
 - Accessibility tweaks
 
+## Versions
+V0.0.1 - Initial Commit
+V0.0.2 - Updated code structure for ease of reading and fixed UI Validation errors.
+
 ## License
 MIT
