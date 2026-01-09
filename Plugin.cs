@@ -1,22 +1,25 @@
 using Dalamud.Game.Command;
 using Dalamud.IoC;
 using Dalamud.Plugin;
-using System.IO;
 using Dalamud.Interface.Windowing;
 using Dalamud.Plugin.Services;
-using SamplePlugin.Windows;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Game.ClientState.Keys;
 
-namespace SamplePlugin;
+using XIVKeyboard.Windows;
+
+namespace XIVKeyboard;
 
 public sealed class Plugin : IDalamudPlugin
 {
+    // ----------------------------
+    // Plugin services
+    // ----------------------------
+
     [PluginService] internal static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
     [PluginService] internal static ITextureProvider TextureProvider { get; private set; } = null!;
     [PluginService] internal static ICommandManager CommandManager { get; private set; } = null!;
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
-    [PluginService] internal static IPlayerState PlayerState { get; private set; } = null!;
     [PluginService] internal static IDataManager DataManager { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     [PluginService] internal static INotificationManager NotificationManager { get; private set; } = null!;
@@ -27,29 +30,89 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
 
-    private const string CommandName = "/posk";
+    // ----------------------------
+    // Constants & state
+    // ----------------------------
 
-    public Configuration Configuration { get; init; }
+    private const string CommandName = "/pxivkb";
 
-    public readonly WindowSystem WindowSystem = new("On Screen Keyboard");
-    private ConfigWindow ConfigWindow { get; init; }
-    private MainWindow MainWindow { get; init; }
+    public Configuration Configuration { get; }
+
+    private readonly WindowSystem windowSystem = new("XIV Keyboard");
+    private readonly MainWindow mainWindow;
+    private readonly ConfigWindow configWindow;
 
     private bool lastEnterDown;
 
+    // ----------------------------
+    // Constructor
+    // ----------------------------
+
+    public Plugin()
+    {
+        Configuration =
+            PluginInterface.GetPluginConfig() as Configuration
+            ?? new Configuration();
+
+        // Create windows (NON-null, fixes CS8604)
+        mainWindow = new MainWindow(this);
+        configWindow = new ConfigWindow(this);
+
+        windowSystem.AddWindow(mainWindow);
+        windowSystem.AddWindow(configWindow);
+
+        // Slash command
+        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
+        {
+            HelpMessage = "Toggle XIV Keyboard (controller on-screen keyboard)."
+        });
+
+        // UI hooks (validator-required)
+        PluginInterface.UiBuilder.Draw += DrawUI;
+        PluginInterface.UiBuilder.OpenMainUi += OpenMainUi;
+        PluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
+
+        // Framework tick
+        Framework.Update += OnFrameworkUpdate;
+
+        NotificationManager.AddNotification(new Dalamud.Interface.ImGuiNotification.Notification
+        {
+            Title = "XIV Keyboard",
+            Content = "On-screen keyboard loaded successfully.",
+            Type = Dalamud.Interface.ImGuiNotification.NotificationType.Success
+        });
+
+        Log.Information($"[XIVKeyboard] Loaded {PluginInterface.Manifest.Name}");
+    }
+
+    // ----------------------------
+    // UI callbacks (validator wants these)
+    // ----------------------------
+
+    private void OpenMainUi() => mainWindow.Open();
+    private void OpenConfigUi() => configWindow.IsOpen = true;
+
+    private void DrawUI()
+    {
+        // Hard rule: capture only while keyboard is open
+        SetGamepadCapture(mainWindow.IsOpen);
+        windowSystem.Draw();
+    }
+
+    // ----------------------------
+    // Input handling
+    // ----------------------------
+
     private void OnFrameworkUpdate(IFramework framework)
     {
-        // only care about Enter key on the physical keyboard
         bool enterDown = KeyState[VirtualKey.RETURN];
 
-        // rising edge = just pressed this frame
         if (enterDown && !lastEnterDown)
         {
-            // Toggle the keyboard window
-            MainWindow.IsOpen = !MainWindow.IsOpen;
-
-            // Optionally: only capture gamepad when open
-            SetGamepadCapture(MainWindow.IsOpen);
+            if (mainWindow.IsOpen)
+                mainWindow.Close();
+            else
+                mainWindow.Open();
         }
 
         lastEnterDown = enterDown;
@@ -59,7 +122,6 @@ public sealed class Plugin : IDalamudPlugin
     {
         var io = ImGui.GetIO();
 
-        // Always start from "off" state for our flags, then apply what we need.
         io.ConfigFlags &= ~ImGuiConfigFlags.NavEnableGamepad;
         io.ConfigFlags &= ~ImGuiConfigFlags.NoMouse;
         io.ConfigFlags &= ~ImGuiConfigFlags.NoMouseCursorChange;
@@ -72,88 +134,37 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-    public Plugin()
-    {
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-
-        // You might normally want to embed resources and load them from the manifest stream
-        var goatImagePath = Path.Combine(PluginInterface.AssemblyLocation.Directory?.FullName!, "goat.png");
-
-        ConfigWindow = new ConfigWindow(this);
-        MainWindow = new MainWindow(this, goatImagePath);
-
-        WindowSystem.AddWindow(ConfigWindow);
-        WindowSystem.AddWindow(MainWindow);
-
-        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
-        {
-            HelpMessage = "A useful message to display in /xlhelp"
-        });
-
-        NotificationManager.AddNotification(new Dalamud.Interface.ImGuiNotification.Notification
-        {
-            Title = "On Screen Keyboard",
-            Content = "On Screen keyboard loaded successfully",
-            Type = Dalamud.Interface.ImGuiNotification.NotificationType.Success
-        });
-
-        Framework.Update += OnFrameworkUpdate;
-
-        if (!ClientState.IsLoggedIn)
-            return;
-
-        if (ImGui.GetIO().WantTextInput)
-            return;
-
-        // Replace that with a custom draw method so we can tick first
-        PluginInterface.UiBuilder.Draw += DrawUI;
-
-
-        // This adds a button to the plugin installer entry of this plugin which allows
-        // toggling the display status of the configuration ui
-        PluginInterface.UiBuilder.OpenConfigUi += ToggleConfigUi;
-
-        // Adds another button doing the same but for the main ui of the plugin
-        PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
-
-        // Add a simple message to the log with level set to information
-        // Use /xllog to open the log window in-game
-        // Example Output: 00:57:54.959 | INF | [SamplePlugin] ===A cool log message from Sample Plugin===
-        Log.Information($"===A cool log message from {PluginInterface.Manifest.Name}===");
-    }
-
-    public void Dispose()
-    {
-        // Unregister all actions to not leak anything during disposal of plugin
-        PluginInterface.UiBuilder.Draw -= DrawUI;
-        PluginInterface.UiBuilder.OpenConfigUi -= ToggleConfigUi;
-        PluginInterface.UiBuilder.OpenMainUi -= ToggleMainUi;
-        SetGamepadCapture(false);
-        Framework.Update -= OnFrameworkUpdate;
-
-        WindowSystem.RemoveAllWindows();
-
-        ConfigWindow.Dispose();
-        MainWindow.Dispose();
-
-        CommandManager.RemoveHandler(CommandName);
-    }
-    private void DrawUI()
-    {
-        // Hard rule: capture = window open
-        SetGamepadCapture(MainWindow.IsOpen);
-
-        WindowSystem.Draw();
-    }
-
+    // ----------------------------
+    // Commands
+    // ----------------------------
 
     private void OnCommand(string command, string args)
     {
-        // In response to the slash command, toggle the display status of our main ui
-        MainWindow.Toggle();
+        if (mainWindow.IsOpen)
+            mainWindow.Close();
+        else
+            mainWindow.Open();
     }
-    
-    public void ToggleConfigUi() => ConfigWindow.Toggle();
-    public void ToggleMainUi() => MainWindow.Toggle();
 
+    // ----------------------------
+    // Disposal
+    // ----------------------------
+
+    public void Dispose()
+    {
+        PluginInterface.UiBuilder.Draw -= DrawUI;
+        PluginInterface.UiBuilder.OpenMainUi -= OpenMainUi;
+        PluginInterface.UiBuilder.OpenConfigUi -= OpenConfigUi;
+
+        Framework.Update -= OnFrameworkUpdate;
+
+        SetGamepadCapture(false);
+
+        windowSystem.RemoveAllWindows();
+
+        mainWindow.Dispose();
+        configWindow.Dispose();
+
+        CommandManager.RemoveHandler(CommandName);
+    }
 }

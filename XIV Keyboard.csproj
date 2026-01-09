@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Dalamud.NET.Sdk/14.0.1">
+  <PropertyGroup>
+    <Version>0.0.2</Version>
+      <PackageProjectUrl>https://github.com/alpha-Centauri85/XIV_keyboard</PackageProjectUrl>
+      <IsPackable>false</IsPackable>
+    <AssemblyName>XIVKeyboard</AssemblyName>
+    <RootNamespace>XIVKeyboard</RootNamespace>
+   <DalamudManifestFile>XIVKeyboard.json</DalamudManifestFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\icon.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>
