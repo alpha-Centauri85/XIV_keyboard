@@ -1,0 +1,27 @@
+{
+  "Author": "αCentauri",
+  "Name": "XIV Keyboard",
+  "InternalName": "XIVKeyboard",
+  "AssemblyVersion": "0.0.2.0",
+  "Description": "An on-screen controller keyboard that auto-opens with chat, supports shift/caps, punctuation row, and delete hold-repeat. Copies text to clipboard on Enter for quick paste.",
+  "ApplicableVersion": "any",
+  "RepoUrl": "https://github.com/alpha-Centauri85/XIV_keyboard",
+  "Tags": [
+    "chat",
+    "controller",
+    "keyboard",
+    "ui"
+  ],
+  "CategoryTags": [
+    "UI"
+  ],
+  "DalamudApiLevel": 14,
+  "LoadRequiredState": 0,
+  "LoadSync": false,
+  "CanUnloadAsync": false,
+  "LoadPriority": 0,
+  "IconUrl": "https://raw.githubusercontent.com/alpha-Centauri85/XIV_keyboard/main/Resources/icon.png",
+  "Punchline": "Controller-first on-screen keyboard for chat",
+  "Changelog": "Initial development build.",
+  "AcceptsFeedback": true
+}
