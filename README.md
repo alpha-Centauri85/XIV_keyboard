@@ -17,7 +17,7 @@ The goal is to make text input and key selection practical and comfortable witho
 
 ## Installation
 1. Install Dalamud.
-2. Add the plugin repository URL (once published).
+2. Add the plugin repository URL ([published](https://raw.githubusercontent.com/alpha-Centauri85/alpha-centauri-dalamud-repo/main/pluginmaster.json)).
 3. Enable **XIV_keyboard** from the plugin list.
 
 > Note: This plugin is under active development.
